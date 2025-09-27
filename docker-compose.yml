@@ -1,0 +1,36 @@
+version: "3.8"
+name: markopolo-ai
+services:
+  backend:
+    container_name: backend
+    build: markopolo-chat-backend/
+    restart: always
+    ports:
+      - 8000:8000
+    networks:
+      custom_net:
+        ipv4_address: 172.20.0.3
+  
+  frontend:
+    container_name: frontend
+    build: markopolo-chat-frontend/
+    restart: always
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+    networks:
+      custom_net:
+        ipv4_address: 172.20.0.2
+
+  
+
+networks:
+  custom_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config: 
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+          ip_range: 172.20.0.0/24
