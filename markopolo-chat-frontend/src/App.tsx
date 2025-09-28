@@ -39,12 +39,15 @@ function App() {
 
 
   const handleSendMessage = async () => {
+    if (sources.filter(source => source.selected).length == 0) {
+      return alert('Select Datasource');
+    }
     if (inputValue.trim()) {
       const newMessage: IMessage = { text: inputValue, sender: "user", success: true };
       setMessages([...messages, newMessage, { text: "...", sender: "bot", sources: [], success: true }]);
       setInputValue("");
 
-      setChannelList(channelList.map(channel => ({...channel, selected: false})))
+      setChannelList(channelList.map(channel => ({ ...channel, selected: false })))
       await handleQuery(inputValue.trim());
 
     }
