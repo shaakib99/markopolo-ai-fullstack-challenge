@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DefaultButton, DefaultInput, MessageBot, MessageUser } from "./components";
-import { IMessage, ISource } from "./interfaces";
+import { IBotMessage, IMessage, ISource } from "./interfaces";
 import { QueryApi, ChannelApi, DataSourceApi } from "./apis";
 import { IChannel } from "./interfaces/channel.interface";
 
@@ -9,6 +9,7 @@ function App() {
   const [messages, setMessages] = useState<Array<IMessage>>([]);
   const [sources, setSources] = useState<ISource[]>([]);
   const [channelList, setChannelList] = useState<IChannel[]>([]);
+  const [botMessages, setBotMessages] = useState<IBotMessage[]>([]);
   const faqQuestions = [
     "Get me a list of users who have been inactive for 30 days",
     "List all users who signed up in the last 30 days",
@@ -20,7 +21,7 @@ function App() {
       const response = await DataSourceApi.getAll({});
       if (response.ok) {
         const data = await response.json();
-        setSources(data.map((item: any) => ({ title: item,  selected: false })));
+        setSources(data.map((item: any) => ({ title: item, selected: false })));
       }
     };
 
@@ -42,6 +43,8 @@ function App() {
       const newMessage: IMessage = { text: inputValue, sender: "user", success: true };
       setMessages([...messages, newMessage, { text: "...", sender: "bot", sources: [], success: true }]);
       setInputValue("");
+
+      setChannelList(channelList.map(channel => ({...channel, selected: false})))
       await handleQuery(inputValue.trim());
 
     }
@@ -75,7 +78,7 @@ function App() {
       botMessage += chunkValue;
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages];
-        updatedMessages[updatedMessages.length - 1] = { text: `<pre>[${botMessage + (done ? ']' : '...')}</pre>`, sender: "bot", success: true };
+        updatedMessages[updatedMessages.length - 1] = { text: `<pre>${botMessage + (done ? '' : '...')}</pre>`, sender: "bot", success: true };
         return updatedMessages;
       });
     }
@@ -88,13 +91,21 @@ function App() {
       });
     }
 
+    setBotMessages((prevMessages) => [...prevMessages, ...JSON.parse(botMessage)])
+
     reader.releaseLock();
   };
+
+  const hasSelectedChannels = () => {
+    return channelList.filter(channel => channel.selected == true)?.length > 0;
+  }
 
   const handleFAQClick = (question: string) => {
     setInputValue(question);
     handleSendMessage();
   };
+
+  const filteredChannel = channelList.filter(channel => channel.selected).map(channel => channel.title);
 
   return (
     <div className="container">
@@ -102,13 +113,14 @@ function App() {
         <div className="logo">Markopolo AI Chat</div>
       </header>
       <div className="chat-area">
-        {messages.map((msg, index) => {
+        {hasSelectedChannels() === false && messages.map((msg, index) => {
           if (msg.sender === "user") {
             return <MessageUser key={index} text={msg.text} sender={msg.sender} success={msg.success} />;
           } else {
             return <MessageBot key={index} text={msg.text} sources={msg.sources} sender={msg.sender} success={msg.success} />;
           }
         })}
+        {hasSelectedChannels() && botMessages.filter(msg => filteredChannel.includes(msg.target_channel)).map((msg, index) => <MessageBot key={index} text={`<pre>${JSON.stringify(msg)}</pre>`} sources={msg.sources} sender={'bot'} success={msg.success === true} />)}
         <div className="related-questions">
           <h3>Frequently Asked Questions</h3>
           <ul>
