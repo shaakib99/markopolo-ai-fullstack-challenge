@@ -31,10 +31,4 @@ class QueryService:
             for i in range(0, len(msg_str), 50):
                 yield msg_str[i:i+50]
                 await asyncio.sleep(0.2)
-            # for msg in result:
-            #     msg_str = msg.json()
-            #     for chunk in [msg_str[i:i+50] for i in range(0, len(msg_str), 50)]:
-            #         yield chunk
-            #         await asyncio.sleep(0.2)  # Simulate streaming delay
-
         return event_stream()
